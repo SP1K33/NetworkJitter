@@ -5,15 +5,13 @@ namespace NetworkJitter
 {
 	public static partial class Program
 	{
-		[STAThread]
+        [STAThread]
 		private static void Main()
 		{
 			Application.EnableVisualStyles();
 			Application.SetCompatibleTextRenderingDefault(false);
-
-
-
-			Application.Run(new MainForm());
+			AppController.Instance.RunStartup();
+            Application.Run(new MainForm());
 		}
 	}
 }
