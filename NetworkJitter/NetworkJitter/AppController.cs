@@ -49,6 +49,9 @@ namespace NetworkJitter
 
         }
 
-
+        public void DisposePowerShell()
+        {
+            _powerShell.Dispose();        
+        }
     }
 }

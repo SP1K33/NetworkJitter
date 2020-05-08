@@ -12,6 +12,7 @@ namespace NetworkJitter
 			{
 				components.Dispose();
 			}
+			AppController.Instance.DisposePowerShell();
 			base.Dispose(disposing);
 		}
 
@@ -27,7 +28,7 @@ namespace NetworkJitter
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(457, 165);
 			this.Name = "MainForm";
-			this.Text = "Form1";
+			this.Text = "NetworkJitter";
 			this.Load += new System.EventHandler(this.MainForm_Load);
 			this.ResumeLayout(false);
 
