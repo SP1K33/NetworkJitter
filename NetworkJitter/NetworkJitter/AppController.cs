@@ -20,6 +20,8 @@ namespace NetworkJitter
         }
         #endregion
 
+        private static PowerShell _powerShell;
+
         private string GetAdapterName()
         {
             Console.Write("Enter adapter name: ");
@@ -42,7 +44,11 @@ namespace NetworkJitter
         {
             string adapterName = GetAdapterName();
             int pauseTime = GetPauseTime();
+
+            _powerShell = new PowerShell(adapterName);
+
         }
+
 
     }
 }
