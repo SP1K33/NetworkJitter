@@ -16,8 +16,8 @@ namespace NetworkJitter
                 {
                     FileName = "powershell",
                     RedirectStandardInput = true,
-                    RedirectStandardOutput = false,
                     UseShellExecute = false,
+                    CreateNoWindow = true,
                 }
             };
             _powerShell.Start();
