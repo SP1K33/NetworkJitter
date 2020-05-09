@@ -5,17 +5,16 @@ namespace NetworkJitter
     public class PowerShell
     {
         private Process _powerShell;
-        private string _adapterName;
+        private string _commandInvariable;
 
         public PowerShell(string adapterName)
         {
-            string fileName = "powershell";
-            _adapterName = adapterName;
+            _commandInvariable = $"-NetAdapterBinding -Name '{adapterName}' -ComponentID ms_tcpip";
             _powerShell = new Process
             {
                 StartInfo = new ProcessStartInfo()
                 {
-                    FileName = fileName,
+                    FileName = "powershell",
                     RedirectStandardInput = true,
                     RedirectStandardOutput = false,
                     UseShellExecute = false,
@@ -27,7 +26,7 @@ namespace NetworkJitter
         public void SwitchIPv4(bool state)
         {
             string ipv4State = (state) ? "enable" : "disable";
-            string command = $"{ipv4State}-NetAdapterBinding -Name '{_adapterName}' -ComponentID ms_tcpip";
+            string command = ipv4State.ToString() + _commandInvariable;
             _powerShell.StandardInput.WriteLine(command);
         }
     }

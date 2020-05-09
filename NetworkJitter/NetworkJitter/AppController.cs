@@ -5,66 +5,50 @@ namespace NetworkJitter
 {
     public partial class AppController
     {
-        private static PowerShell _powerShell;
-
-        private string GetAdapterName()
+        private string GetUserInput(string warningMessage, string resultMessage)
         {
-            Console.Write("Enter adapter name: ");
+            Console.Write(warningMessage);
             string userInput = Console.ReadLine();
-            string result = string.IsNullOrEmpty(userInput) ? "Ethernet" : userInput;
-            Console.WriteLine($"Adapter name: {result}");
-            return result;
+            Console.WriteLine(resultMessage + userInput);
+            return userInput;
         }
 
-        private int GetPauseTime()
+        private int GetUserKeyDown(string warningMessage, string resultMessage)
         {
-            Console.Write("Enter pause (ms): ");
-            string userInput = Console.ReadLine();
-            int result = (string.IsNullOrEmpty(userInput)) ? 3000 : int.Parse(userInput);
-            Console.WriteLine($"Pause time: {result}");
-            return result;
+            Console.Write(warningMessage);
+            var userInput = Console.ReadKey().Key;
+            Console.WriteLine(resultMessage + userInput);
+            return (int)userInput;
         }
 
-        private int GetPressedKey()
+        private UserInfo CollectUserInfo()
         {
-            while (true)
+            var result = new UserInfo
             {
-                for (int key = 8; key <= 255; ++key)
-                {
-                    if (GetAsyncKeyState(key) != 0) // HC_ACTION
-                    {
-                        return key;
-                    }
-                }
-                Thread.Sleep(10);
-            }
+                AdapterName = GetUserInput("Enter adapter name: ", "Adapter name: "),
+                PauseTime = int.Parse(GetUserInput("Enter pause (ms): ", "Pause time: ")),
+                TriggerKey = GetUserKeyDown("Press trigger key: ", "Trigger key: "),
+                ExitKey = GetUserKeyDown("Press panic key: ", "Panic key: "),
+                SleepTime = 10 // enough
+            };
+            return result;
         }
 
         public void RunStartup()
         {
-            string adapterName = GetAdapterName();
-            int pauseTime = GetPauseTime();
-
-            Console.WriteLine("Press trigger key: ");
-            int triggerKey = GetPressedKey();
-            Console.WriteLine($"Trigger key: {triggerKey}");
-
-            Console.WriteLine("Press panic key: ");
-            int exitKey = GetPressedKey();
-            Console.WriteLine($"Panic key: {exitKey}");
-
-            _powerShell = new PowerShell(adapterName);
+            var userInfo = CollectUserInfo();
+            var powerShell = new PowerShell(userInfo.AdapterName);
 
             while (true)
             {
-                if (GetAsyncKeyState(triggerKey) != 0x0)
+                if (GetAsyncKeyState(userInfo.TriggerKey) != 0x0)
                 {
-                    _powerShell.SwitchIPv4(false);
-                    Thread.Sleep(pauseTime);
-                    _powerShell.SwitchIPv4(true);
+                    powerShell.SwitchIPv4(false);
+                    Thread.Sleep(userInfo.PauseTime);
+                    powerShell.SwitchIPv4(true);
                 }
 
-                if (GetAsyncKeyState(exitKey) != 0x0)
+                if (GetAsyncKeyState(69) != 0x0)
                 {
                     break;
                 }
