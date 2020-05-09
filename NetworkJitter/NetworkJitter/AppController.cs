@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Xml;
 using System.Xml.Serialization;
+using System.Security.Principal;
 
 namespace NetworkJitter
 {
@@ -65,18 +66,33 @@ namespace NetworkJitter
 
             Console.Write("Press trigger key: ");
             result.TriggerKey = (int)Console.ReadKey().Key; 
-
-            Console.Write("\nPress exit key: ");
-            result.ExitKey = (int)Console.ReadKey().Key;
             Console.WriteLine();
 
             result.SleepTime = 10; // enough
             return result;
         }
 
+        public bool CheckAdministartorRole()
+        {
+            bool isElevated;
+            using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
+            {
+                var principal = new WindowsPrincipal(identity);
+                isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+            return isElevated;
+        }
+
         public void Run()
         {
             Console.WriteLine("NetworkJitter v1.0");
+
+            if (!CheckAdministartorRole())
+            {
+                Console.WriteLine("Run programm with Administrator role");
+                Console.ReadLine();
+                return;
+            }
 
             var userInfo = GetUserInfo();
 
@@ -87,7 +103,6 @@ namespace NetworkJitter
             {
                 Thread.Sleep(userInfo.SleepTime);
 
-                short exitKeyPressed = GetAsyncKeyState(userInfo.ExitKey);
                 short triggerKeyPressed = GetAsyncKeyState(userInfo.TriggerKey);
 
                 if (triggerKeyPressed != 0 && GetCurrentTime > nextTime)
@@ -98,10 +113,6 @@ namespace NetworkJitter
                     Thread.Sleep(userInfo.PauseTime);
                     powerShell.SwitchIPv4(true);
                     Console.WriteLine(DateTime.Now + $" | {userInfo.AdapterName} IPv4 enabled");
-                }
-                else if (exitKeyPressed != 0)
-                {
-                    break;
                 }
             }
         }
