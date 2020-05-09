@@ -5,7 +5,7 @@
         private static void Main()
         {
             var app = new AppController();
-            app.RunStartup();
+            app.Run();
         }
     }
 }

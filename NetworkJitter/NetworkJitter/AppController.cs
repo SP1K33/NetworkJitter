@@ -1,58 +1,115 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
+using System.Xml;
+using System.Xml.Serialization;
 
 namespace NetworkJitter
 {
     public partial class AppController
     {
-        private string GetUserInput(string warningMessage, string resultMessage)
+        private UserInfo GetUserInfo()
         {
-            Console.Write(warningMessage);
-            string userInput = Console.ReadLine();
-            Console.WriteLine(resultMessage + userInput);
-            return userInput;
-        }
-
-        private int GetUserKeyDown(string warningMessage, string resultMessage)
-        {
-            Console.Write(warningMessage);
-            var userInput = Console.ReadKey().Key;
-            Console.WriteLine(resultMessage + userInput);
-            return (int)userInput;
-        }
-
-        private UserInfo CollectUserInfo()
-        {
-            var result = new UserInfo
+            UserInfo userInfo;
+            var xmlPath = Path.Combine(Directory.GetCurrentDirectory(), "settings.xml");
+            if (File.Exists(xmlPath))
             {
-                AdapterName = GetUserInput("Enter adapter name: ", "Adapter name: "),
-                PauseTime = int.Parse(GetUserInput("Enter pause (ms): ", "Pause time: ")),
-                TriggerKey = GetUserKeyDown("Press trigger key: ", "Trigger key: "),
-                ExitKey = GetUserKeyDown("Press panic key: ", "Panic key: "),
-                SleepTime = 10 // enough
-            };
+                var serializer = new XmlSerializer(typeof(UserInfo));
+                StreamReader reader = new StreamReader(xmlPath);
+                userInfo = (UserInfo)serializer.Deserialize(reader);
+                reader.Dispose();
+            }
+            else
+            {
+                userInfo = CreateUserInfo();
+                XmlSerializer xsSubmit = new XmlSerializer(typeof(UserInfo));
+                var stringWriter = new StringWriter();
+                var xmlWriter = new XmlTextWriter(stringWriter);
+                xmlWriter.Formatting = Formatting.Indented;
+                xsSubmit.Serialize(xmlWriter, userInfo);
+                var xml = stringWriter.ToString();
+                File.WriteAllText(xmlPath, xml);
+                xmlWriter.Dispose();
+                stringWriter.Dispose();
+            }
+            return userInfo;
+        }
+
+        private UserInfo CreateUserInfo()
+        {
+            var result = new UserInfo();
+
+            Console.Write("Enter adapter name: ");
+            result.AdapterName = Console.ReadLine();
+            if (string.IsNullOrEmpty(result.AdapterName) || string.IsNullOrWhiteSpace(result.AdapterName))
+            {
+                string defaultAdapterName = "Ethernet";
+                Console.WriteLine("Adapter name set: " + defaultAdapterName);
+                result.AdapterName = defaultAdapterName;
+            }
+
+            Console.Write("Enter pause (ms): ");
+            string pauseTimeInput = Console.ReadLine();
+            if (string.IsNullOrEmpty(pauseTimeInput) || string.IsNullOrWhiteSpace(pauseTimeInput))
+            {
+                int pauseTime = 3000;
+                Console.WriteLine("Pause time set: " + pauseTime);
+                result.PauseTime = pauseTime;
+            }
+            else
+            {
+                result.PauseTime = int.Parse(pauseTimeInput);
+            }
+
+            Console.Write("Press trigger key: ");
+            result.TriggerKey = (int)Console.ReadKey().Key; 
+
+            Console.Write("\nPress exit key: ");
+            result.ExitKey = (int)Console.ReadKey().Key;
+            Console.WriteLine();
+
+            result.SleepTime = 10; // enough
             return result;
         }
 
-        public void RunStartup()
+        public void WaitForMilliseconds(int ms)
         {
-            var userInfo = CollectUserInfo();
+            var nextTime = DateTime.Now.TimeOfDay.TotalMilliseconds + ms; 
+            while (DateTime.Now.TimeOfDay.TotalMilliseconds < nextTime)
+            {
+                Thread.Sleep(1); // reduce cpu attack
+            }
+        }
+
+        public void Run()
+        {
+            Console.WriteLine("NetworkJitter v1.0");
+
+            var userInfo = GetUserInfo();
+
             var powerShell = new PowerShell(userInfo.AdapterName);
+            double nextTime = double.MaxValue;
 
             while (true)
             {
-                if (GetAsyncKeyState(userInfo.TriggerKey) != 0x0)
+                Thread.Sleep(userInfo.SleepTime);
+
+                double msSpent = DateTime.Now.TimeOfDay.TotalMilliseconds;
+                short exitKeyPressed = GetAsyncKeyState(userInfo.ExitKey);
+                short triggerKeyPressed = GetAsyncKeyState(userInfo.TriggerKey);
+
+                if (triggerKeyPressed != 0 && nextTime > msSpent)
                 {
+                    nextTime = msSpent + userInfo.PauseTime;
                     powerShell.SwitchIPv4(false);
-                    Thread.Sleep(userInfo.PauseTime);
+                    WaitForMilliseconds(userInfo.PauseTime);
                     powerShell.SwitchIPv4(true);
                 }
 
-                if (GetAsyncKeyState(69) != 0x0)
+                if (exitKeyPressed != 0)
                 {
                     break;
                 }
-                Thread.Sleep(10);
             }
         }
     }
