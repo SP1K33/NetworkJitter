@@ -94,11 +94,12 @@ namespace NetworkJitter
                 {
                     nextTime = GetCurrentTime + userInfo.PauseTime;
                     powerShell.SwitchIPv4(false);
+                    Console.WriteLine(DateTime.Now + $" | {userInfo.AdapterName} IPv4 disabled");
                     Thread.Sleep(userInfo.PauseTime);
                     powerShell.SwitchIPv4(true);
+                    Console.WriteLine(DateTime.Now + $" | {userInfo.AdapterName} IPv4 enabled");
                 }
-
-                if (exitKeyPressed != 0)
+                else if (exitKeyPressed != 0)
                 {
                     break;
                 }
