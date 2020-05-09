@@ -8,6 +8,8 @@ namespace NetworkJitter
 {
     public partial class AppController
     {
+        private double GetCurrentTime => DateTime.Now.TimeOfDay.TotalMilliseconds;
+
         private UserInfo GetUserInfo()
         {
             UserInfo userInfo;
@@ -72,15 +74,6 @@ namespace NetworkJitter
             return result;
         }
 
-        public void WaitForMilliseconds(int ms)
-        {
-            var nextTime = DateTime.Now.TimeOfDay.TotalMilliseconds + ms; 
-            while (DateTime.Now.TimeOfDay.TotalMilliseconds < nextTime)
-            {
-                Thread.Sleep(1); // reduce cpu attack
-            }
-        }
-
         public void Run()
         {
             Console.WriteLine("NetworkJitter v1.0");
@@ -88,21 +81,20 @@ namespace NetworkJitter
             var userInfo = GetUserInfo();
 
             var powerShell = new PowerShell(userInfo.AdapterName);
-            double nextTime = double.MaxValue;
+            double nextTime = 0f;
 
             while (true)
             {
                 Thread.Sleep(userInfo.SleepTime);
 
-                double msSpent = DateTime.Now.TimeOfDay.TotalMilliseconds;
                 short exitKeyPressed = GetAsyncKeyState(userInfo.ExitKey);
                 short triggerKeyPressed = GetAsyncKeyState(userInfo.TriggerKey);
 
-                if (triggerKeyPressed != 0 && nextTime > msSpent)
+                if (triggerKeyPressed != 0 && GetCurrentTime > nextTime)
                 {
-                    nextTime = msSpent + userInfo.PauseTime;
+                    nextTime = GetCurrentTime + userInfo.PauseTime;
                     powerShell.SwitchIPv4(false);
-                    WaitForMilliseconds(userInfo.PauseTime);
+                    Thread.Sleep(userInfo.PauseTime);
                     powerShell.SwitchIPv4(true);
                 }
 
