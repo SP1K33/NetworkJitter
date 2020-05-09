@@ -1,17 +1,11 @@
-﻿using System;
-using System.Windows.Forms;
-
-namespace NetworkJitter
+﻿namespace NetworkJitter
 {
-	public static partial class Program
-	{
-        [STAThread]
-		private static void Main()
-		{
-			Application.EnableVisualStyles();
-			Application.SetCompatibleTextRenderingDefault(false);
-			AppController.Instance.RunStartup();
-            Application.Run(new MainForm());
-		}
-	}
+    public static class Program
+    {
+        private static void Main()
+        {
+            var app = new AppController();
+            app.RunStartup();
+        }
+    }
 }

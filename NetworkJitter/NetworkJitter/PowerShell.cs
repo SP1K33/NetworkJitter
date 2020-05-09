@@ -1,9 +1,8 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace NetworkJitter
 {
-    public class PowerShell : IDisposable
+    public class PowerShell
     {
         private Process _powerShell;
         private string _adapterName;
@@ -18,7 +17,8 @@ namespace NetworkJitter
                 {
                     FileName = fileName,
                     RedirectStandardInput = true,
-                    RedirectStandardOutput = false
+                    RedirectStandardOutput = false,
+                    UseShellExecute = false,
                 }
             };
             _powerShell.Start();
@@ -29,12 +29,6 @@ namespace NetworkJitter
             string ipv4State = (state) ? "enable" : "disable";
             string command = $"{ipv4State}-NetAdapterBinding -Name '{_adapterName}' -ComponentID ms_tcpip";
             _powerShell.StandardInput.WriteLine(command);
-        }
-
-        public void Dispose()
-        {
-            _powerShell.Kill();
-            _powerShell.Dispose();
         }
     }
 }

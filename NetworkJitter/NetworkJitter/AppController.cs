@@ -1,25 +1,10 @@
 ﻿using System;
+using System.Threading;
 
 namespace NetworkJitter
 {
-    public class AppController
+    public partial class AppController
     {
-        #region Singleton
-        private static AppController _instance;
-
-        public static AppController Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    _instance = new AppController();
-                }
-                return _instance;
-            }
-        }
-        #endregion
-
         private static PowerShell _powerShell;
 
         private string GetAdapterName()
@@ -40,18 +25,51 @@ namespace NetworkJitter
             return result;
         }
 
+        private int GetPressedKey()
+        {
+            while (true)
+            {
+                for (int key = 8; key <= 255; ++key)
+                {
+                    if (GetAsyncKeyState(key) != 0) // HC_ACTION
+                    {
+                        return key;
+                    }
+                }
+                Thread.Sleep(10);
+            }
+        }
+
         public void RunStartup()
         {
             string adapterName = GetAdapterName();
             int pauseTime = GetPauseTime();
 
+            Console.WriteLine("Press trigger key: ");
+            int triggerKey = GetPressedKey();
+            Console.WriteLine($"Trigger key: {triggerKey}");
+
+            Console.WriteLine("Press panic key: ");
+            int exitKey = GetPressedKey();
+            Console.WriteLine($"Panic key: {exitKey}");
+
             _powerShell = new PowerShell(adapterName);
 
-        }
+            while (true)
+            {
+                if (GetAsyncKeyState(triggerKey) != 0x0)
+                {
+                    _powerShell.SwitchIPv4(false);
+                    Thread.Sleep(pauseTime);
+                    _powerShell.SwitchIPv4(true);
+                }
 
-        public void DisposePowerShell()
-        {
-            _powerShell.Dispose();        
+                if (GetAsyncKeyState(exitKey) != 0x0)
+                {
+                    break;
+                }
+                Thread.Sleep(10);
+            }
         }
     }
 }
