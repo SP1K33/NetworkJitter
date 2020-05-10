@@ -11,31 +11,39 @@ namespace NetworkJitter
     {
         private double GetCurrentTime => DateTime.Now.TimeOfDay.TotalMilliseconds;
 
+        private UserInfo DeserializeUserInfo(string xmlPath)
+        {
+            var serializer = new XmlSerializer(typeof(UserInfo));
+            using var reader = new StreamReader(xmlPath);
+            return (UserInfo)serializer.Deserialize(reader);
+        }
+
+        private void SerializeUserInfo(UserInfo userInfo, string xmlPath)
+        {
+            var xsSubmit = new XmlSerializer(typeof(UserInfo));
+            using (var stringWriter = new StringWriter())
+            {
+                using (var xmlWriter = new XmlTextWriter(stringWriter))
+                {
+                    xmlWriter.Formatting = Formatting.Indented;
+                    xsSubmit.Serialize(xmlWriter, userInfo);
+                    File.WriteAllText(xmlPath, stringWriter.ToString());
+                }
+            }
+        }
+
         private UserInfo GetUserInfo()
         {
             UserInfo userInfo;
             var xmlPath = Path.Combine(Directory.GetCurrentDirectory(), "settings.xml");
             if (File.Exists(xmlPath))
             {
-                var serializer = new XmlSerializer(typeof(UserInfo));
-                var reader = new StreamReader(xmlPath);
-                userInfo = (UserInfo)serializer.Deserialize(reader);
-                reader.Dispose();
+                userInfo = DeserializeUserInfo(xmlPath);
             }
             else
             {
                 userInfo = CreateUserInfo();
-
-                var xsSubmit = new XmlSerializer(typeof(UserInfo));
-                using (var stringWriter = new StringWriter())
-                {
-                    using (var xmlWriter = new XmlTextWriter(stringWriter))
-                    {
-                        xmlWriter.Formatting = Formatting.Indented;
-                        xsSubmit.Serialize(xmlWriter, userInfo);
-                        File.WriteAllText(xmlPath, stringWriter.ToString());
-                    }
-                }
+                SerializeUserInfo(userInfo, xmlPath);
             }
             return userInfo;
         }
