@@ -18,22 +18,24 @@ namespace NetworkJitter
             if (File.Exists(xmlPath))
             {
                 var serializer = new XmlSerializer(typeof(UserInfo));
-                StreamReader reader = new StreamReader(xmlPath);
+                var reader = new StreamReader(xmlPath);
                 userInfo = (UserInfo)serializer.Deserialize(reader);
                 reader.Dispose();
             }
             else
             {
                 userInfo = CreateUserInfo();
-                XmlSerializer xsSubmit = new XmlSerializer(typeof(UserInfo));
-                var stringWriter = new StringWriter();
-                var xmlWriter = new XmlTextWriter(stringWriter);
-                xmlWriter.Formatting = Formatting.Indented;
-                xsSubmit.Serialize(xmlWriter, userInfo);
-                var xml = stringWriter.ToString();
-                File.WriteAllText(xmlPath, xml);
-                xmlWriter.Dispose();
-                stringWriter.Dispose();
+
+                var xsSubmit = new XmlSerializer(typeof(UserInfo));
+                using (var stringWriter = new StringWriter())
+                {
+                    using (var xmlWriter = new XmlTextWriter(stringWriter))
+                    {
+                        xmlWriter.Formatting = Formatting.Indented;
+                        xsSubmit.Serialize(xmlWriter, userInfo);
+                        File.WriteAllText(xmlPath, stringWriter.ToString());
+                    }
+                }
             }
             return userInfo;
         }
@@ -75,7 +77,7 @@ namespace NetworkJitter
         public bool CheckAdministartorRole()
         {
             bool isElevated;
-            using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
+            using (var identity = WindowsIdentity.GetCurrent())
             {
                 var principal = new WindowsPrincipal(identity);
                 isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);

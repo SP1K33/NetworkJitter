@@ -26,7 +26,7 @@ namespace NetworkJitter
         public void SwitchIPv4(bool state)
         {
             string ipv4State = (state) ? "enable" : "disable";
-            string command = ipv4State.ToString() + _commandInvariable;
+            string command = ipv4State + _commandInvariable;
             _powerShell.StandardInput.WriteLine(command);
         }
     }
